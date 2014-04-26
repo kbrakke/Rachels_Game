@@ -19,27 +19,44 @@ class PythonGame:
         self.player = Player()
         clothespic = load_image('./Items/detectiveClothes.png')
         needlepic = load_image('./Items/clue1Ons.png')
-        #item3pic = load_image('testitem3.png')
-        #npc1pic = load_image('npctest1.png')
-        #npc2pic = load_image('npctest2.png')
-        prostitute = Npc(npc1pic, 400, 500, "prostitute",npc1generic1, npc1partial1, npc1found1, npc1final1, ["needle",],self.screen)
-        #npc2 = Npc(npc2pic, 600, 500, "npc2",npc1generic1, npc1partial1, npc1found1, npc1final1, ["item2", "item3"],self.screen)
+        ppic = load_image('./Npcs/person1.png')
+        #prost = Npc(ppic, 400, 500, "prostitute", npc1generic1, npc1partial1, npc1found1, npc1final1, ["needle",],self.screen)
         clothes = Item(clothespic, 450, 200, "clothes")
         needle = Item(needlepic, 700, 600, "needle")
-        #item3 = Item(item3pic, 1200, 600, "item3")
         scene1 = Scene(load_image('./Backgrounds/background1.png'),
                        {"clothes" : clothes, "needle" : needle},
                        [],
                        self.screen,
-                       [Doorway(pygame.Rect(0, 0, 80, 1000), "main_street", load_image("./Interaction/toMainStreet.png"))])
-        scene2 = Scene(load_image('./Backgrounds/background2.jpg').convert(),
+                       [Doorway(pygame.Rect(0, 0, 80, 1000), "scene2", load_image("./Interaction/toMainStreet.png"))])
+        scene2 = Scene(load_image('./Backgrounds/background2.png'),
                        {},
-                       [prostitute,],
+                       [],
                        self.screen,
-                       [Doorway(pygame.Rect(0, 0, 80, 1000), "scene1")])
+                       [Doorway(pygame.Rect(650, 0, 80, 1000), "scene1", load_image("./Interaction/toRichyGAlley.png")),
+                        Doorway(pygame.Rect(0, 0, 80, 1000), "scene3", load_image("./Interaction/toMainStreet.png"))])
+        scene3 = Scene(load_image('./Backgrounds/background3.png'),
+                       {},
+                       [],
+                       self.screen,
+                       [Doorway(pygame.Rect(1000, 0, 80, 1000), "scene2", load_image("./Interaction/toMainStreet.png")),
+                        Doorway(pygame.Rect(100, 0, 80, 1000), "scene4", load_image("./Interaction/toOtherAlley.png"))])
+        scene4 = Scene(load_image('./Backgrounds/background4.png'),
+                       {},
+                       [],
+                       self.screen,
+                       [Doorway(pygame.Rect(0, 0, 80, 1000), "scene3", load_image("./Interaction/toMainStreet.png")),
+                        Doorway(pygame.Rect(1000, 0, 80, 1000), "scene5", load_image("./Interaction/toOtherAlley.png"))])
+        scene5 = Scene(load_image('./Backgrounds/background5.png'),
+                       {},
+                       [],
+                       self.screen,
+                       [Doorway(pygame.Rect(0, 0, 80, 1000), "scene4", load_image("./Interaction/toOtherAlley.png"))])         
         self.drunkMeter = DrunkMeter("full", self.screen)
         self.scenes["scene1"] = scene1
         self.scenes["scene2"] = scene2
+        self.scenes["scene3"] = scene3
+        self.scenes["scene4"] = scene4
+        self.scenes["scene5"] = scene5
         self.current_scene = "scene1"
         self.screen.blit(self.base, (0,0))
         self.drunkMeter.draw()
@@ -73,6 +90,7 @@ class PythonGame:
                         if ret != None:
                            self.scenes[ret].enter(self.player, self.current_scene)
                            self.current_scene =  ret
+                           #print ret
                 if event.type == pygame.KEYUP:
                     movement = 0
             self.update(movement)       
@@ -154,9 +172,9 @@ class DrunkMeter(pygame.sprite.Sprite):
     def draw(self):
         if self.state == "full":
             self.screen.blit(self.full, (1060, 0))
-        elif self.state = "med":
+        elif self.state == "med":
             self.screen.blit(self.med, (1060, 0))
-        elif self.state = "empty":
+        elif self.state == "empty":
             self.screen.blit(self.empty, (1060, 0))
             
 class Item(pygame.sprite.Sprite):
@@ -216,8 +234,10 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.direction = False
-        self.rg_image = load_image("./Richie/RGIdleWalk1.png")
-        self.drg_image = load_image("./Richie/DRGstandWalk2.png")
+        self.current_step = 0
+        self.moved = 0
+        self.rg_images = [load_image("./Richie/RGIdleWalk1.png"),load_image("./Richie/RGWalk2.png"),load_image("./Richie/RGIdleWalk1.png"),load_image("./Richie/RGWalk3.png")]
+        self.drg_images = [load_image("./Richie/DRGstandWalk2.png"),load_image("./Richie/DRGWalk1.png"),load_image("./Richie/DRGstandWalk2.png"),load_image("./Richie/DRGWalk3.png")]
         self.default_clue_bar = load_image('./ClueBar/clueBar.png')
         self.cb12345 = load_image('./ClueBar/clueBar12345.png')
         
@@ -233,19 +253,19 @@ class Player(pygame.sprite.Sprite):
 
         self.cb1 = load_image('./ClueBar/clueBar1.png')
         
-        self.rect = self.rg_image.get_rect()
+        self.rect = self.rg_images[0].get_rect()
         self.inventory = set()
     def draw(self, screen):
         if("clothes" in self.inventory):
             if(self.direction):
-                screen.blit(pygame.transform.flip(self.drg_image, True, False), self.rect)
+                screen.blit(pygame.transform.flip(self.drg_images[self.current_step], True, False), self.rect)
             else:
-                screen.blit(self.drg_image, self.rect)
+                screen.blit(self.drg_images[self.current_step], self.rect)
         else:
             if(self.direction):
-                screen.blit(pygame.transform.flip(self.rg_image, True, False), self.rect)
+                screen.blit(pygame.transform.flip(self.rg_images[self.current_step], True, False), self.rect)
             else:
-                screen.blit(self.rg_image, self.rect)
+                screen.blit(self.rg_images[self.current_step], self.rect)
         if "needle" in self.inventory:
             if "racoon" in self.inventory:
                 if "name" in self.inventory:
@@ -278,6 +298,11 @@ class Player(pygame.sprite.Sprite):
         x = max(0, x)
         self.rect.x = x
         self.rect.y = self.rect.y + y_adj
+        if x_adj != 0:
+            self.moved = self.moved +1
+            if self.moved > 5:
+                self.current_step = (self.current_step + 1) % 4
+                self.moved = 0
     def pickupItem(self, item):
         self.inventory.add(item)
         
