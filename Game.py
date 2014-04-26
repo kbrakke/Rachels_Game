@@ -1,58 +1,58 @@
 import pygame, sys
+from sets import Set
 
-WIN_WIDTH = 1280
-WIN_HEIGHT = 720
+WIN_WIDTH = 1300
+WIN_HEIGHT = 1010
 HALF_WIDTH = int(WIN_WIDTH / 2)
 HALF_HEIGHT = int(WIN_HEIGHT / 2)
 
 def load_image(image_name):
-    return pygame.image.load(image_name).convert()
+    return pygame.image.load(image_name).convert_alpha()
 
 class PythonGame:
     def __init__(self):
         #Dictionary of potential background images
         self.scenes = {}
-        self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT+100))
-        self.player = Player(load_image('persontest.png'))
-        item1pic = load_image('testitem1.png')
-        item2pic = load_image('testitem2.png')
-        item3pic = load_image('testitem3.png')
-        npc1pic = load_image('npctest1.png')
-        npc1final1 = load_image('npc1final1.png')
-        npc1generic1 = load_image('npc1generic1.png')
-        npc1partial1 = load_image('npc1partial1.png')
-        npc1found1 = load_image('npc1found1.png')
-        npc2pic = load_image('npctest2.png')
-        npc1 = Npc(npc1pic, 400, 600, "npc1",npc1generic1, npc1partial1, npc1found1, npc1final1, ["item1",],self.screen)
-        npc2 = Npc(npc2pic, 600, 600, "npc2",npc1generic1, npc1partial1, npc1found1, npc1final1, ["item2",],self.screen)
-        item1 = Item(item1pic, 200, 600, "item1")
-        item2 = Item(item2pic, 700, 600, "item2")
-        item3 = Item(item3pic, 1200, 600, "item3")
-        scene1 = Scene(load_image('testbglong1.png'),
-                       {"item1" : item1, "item2" : item2},
-                       [npc1,],
+        self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+        self.base = pygame.Surface(self.screen.get_size()).convert()
+        self.base.fill((255, 255, 255))
+        self.player = Player()
+        clothespic = load_image('./Items/detectiveClothes.png')
+        needlepic = load_image('./Items/clue1Ons.png')
+        #item3pic = load_image('testitem3.png')
+        #npc1pic = load_image('npctest1.png')
+        #npc2pic = load_image('npctest2.png')
+        prostitute = Npc(npc1pic, 400, 500, "prostitute",npc1generic1, npc1partial1, npc1found1, npc1final1, ["needle",],self.screen)
+        #npc2 = Npc(npc2pic, 600, 500, "npc2",npc1generic1, npc1partial1, npc1found1, npc1final1, ["item2", "item3"],self.screen)
+        clothes = Item(clothespic, 450, 200, "clothes")
+        needle = Item(needlepic, 700, 600, "needle")
+        #item3 = Item(item3pic, 1200, 600, "item3")
+        scene1 = Scene(load_image('./Backgrounds/background1.png'),
+                       {"clothes" : clothes, "needle" : needle},
+                       [],
                        self.screen,
-                       [Doorway(pygame.Rect(250, 455, 80, 150), "scene2"),
-                        Doorway(pygame.Rect(890, 480, 65, 120), "scene3")])
-        scene2 = Scene(load_image('teststreet3.png'),
-                       {"item3" : item3},
-                       [npc2,],
+                       [Doorway(pygame.Rect(0, 0, 80, 1000), "main_street", load_image("./Interaction/toMainStreet.png"))])
+        scene2 = Scene(load_image('./Backgrounds/background2.jpg').convert(),
+                       {},
+                       [prostitute,],
                        self.screen,
-                       [Doorway(pygame.Rect(60, 285, 100, 340), "scene1")])
-        
+                       [Doorway(pygame.Rect(0, 0, 80, 1000), "scene1")])
+        self.drunkMeter = DrunkMeter("full", self.screen)
         self.scenes["scene1"] = scene1
         self.scenes["scene2"] = scene2
         self.current_scene = "scene1"
-        self.hud = load_image('testhud1.png')
-        self.screen.blit(self.hud, pygame.Rect(0, 720, WIN_WIDTH, WIN_HEIGHT))
-        self.player.move(100, 520)
+        self.screen.blit(self.base, (0,0))
+        self.drunkMeter.draw()
+        self.player.move(10, 160, self.scenes[self.current_scene])
 
-    def update(self, movement):
-        self.player.move(movement, 0)
+    def update(self, movement): 
+        self.player.move(movement, 0, self.scenes[self.current_scene])
+        self.screen.blit(self.base, (0,0))       
         self.scenes[self.current_scene].draw(self.player)
+        self.drunkMeter.draw()
         self.player.draw(self.screen)
         pygame.display.update()
-        pygame.time.delay(100)
+        pygame.time.delay(int(1000/30))
 
     def run(self):
         movement = 0
@@ -63,9 +63,11 @@ class PythonGame:
                         pygame.display.quit()
                         sys.exit()
                     if event.key == pygame.K_LEFT:
-                        movement = -10
+                        self.player.direction = True
+                        movement = -5
                     if event.key == pygame.K_RIGHT:
-                        movement = 10
+                        movement = 5
+                        self.player.direction = False
                     if event.key == pygame.K_SPACE:
                         ret = self.scenes[self.current_scene].interact(self.player)
                         if ret != None:
@@ -79,35 +81,42 @@ class PythonGame:
 
 class Scene(object):
     def __init__(self, background, items, npcs, screen, exits):
-        self.interact_img = pygame.image.load('can_interact.png').convert()
+        self.interaction_images = {"item" : load_image("./Interaction/space.png"),
+                                   "npc" : load_image("./Interaction/talk.png")}
         self.background = background
         self.items = items
         self.npcs = npcs
         self.exits = exits
-        self.rect = (0,0, 1280, 720)
         self.screen = screen
+        self.rect = background.get_rect()
     def draw(self, player):
         self.screen.blit(self.background, self.rect)
         for itemName in self.items:
             self.items[itemName].draw(self.screen)
             if(player.rect.colliderect(self.items[itemName].rect)):
-                self.showInteraction()
+                self.showInteraction("item")
         for point in self.exits:
             if(player.rect.colliderect(point.rect)):
-                self.showInteraction()
+                self.showInteraction(point)
         for npc in self.npcs:
             npc.draw()
             if(player.rect.colliderect(npc.rect)):
-                self.showInteraction()
+                self.showInteraction("npc")
                 
-    def showInteraction(self):
-        r = self.interact_img.get_rect()
-        r.x = HALF_WIDTH - int(r.width/2)
-        r.y = 50
-        self.screen.blit(self.interact_img, r)
+    def showInteraction(self, subject):
+        if subject == "npc":
+            i = self.interaction_images["npc"]
+        elif subject == "item":
+            i = self.interaction_images["item"]
+        else:
+            i = subject.goto_img
+        r = i.get_rect()
+        r.x = int(self.rect.width/2) - int(r.width/2)
+        r.y = 5
+        self.screen.blit(i, r)
     def hideInteraction(self):
         r = self.interact_img.get_rect()
-        r.x = HALF_WIDTH - int(r.width/2)
+        r.x = int(self.rect.width/2) - int(r.width/2)
         r.y = 50
         self.screen.blit(self.background, r, r)
     def interact(self, player):
@@ -115,7 +124,7 @@ class Scene(object):
         for itemName in self.items:
             if(player.rect.colliderect(self.items[itemName].rect)):
                 self.items[itemName].remove(self.screen, self.background)
-                player.pickupItem(self.items[itemName])
+                player.pickupItem(itemName)
                 item_to_remove = itemName
         if (item_to_remove != None):
             del self.items[item_to_remove]
@@ -134,7 +143,21 @@ class Scene(object):
         for door in self.exits:
             if door.goto == last_scene:
                 player.rect.x = door.rect.x
-
+                
+class DrunkMeter(pygame.sprite.Sprite):
+    def __init__(self, state, screen):
+        self.full = load_image('./DrunkMeter/drunkMeter.png')
+        self.med = load_image('./DrunkMeter/middleMeter.png')
+        self.empty = load_image('./DrunkMeter/soberMeter.png')
+        self.state = state
+        self.screen = screen
+    def draw(self):
+        if self.state == "full":
+            self.screen.blit(self.full, (1060, 0))
+        elif self.state = "med":
+            self.screen.blit(self.med, (1060, 0))
+        elif self.state = "empty":
+            self.screen.blit(self.empty, (1060, 0))
             
 class Item(pygame.sprite.Sprite):
     def __init__(self, image, x, y, name):
@@ -188,33 +211,81 @@ class Npc(pygame.sprite.Sprite):
             self.speak_line(self.partial_lines)
         else:
             self.speak_line(self.generic_lines)
+            
 class Player(pygame.sprite.Sprite):
-    def __init__(self, image):
+    def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.inventory = {}
+        self.direction = False
+        self.rg_image = load_image("./Richie/RGIdleWalk1.png")
+        self.drg_image = load_image("./Richie/DRGstandWalk2.png")
+        self.default_clue_bar = load_image('./ClueBar/clueBar.png')
+        self.cb12345 = load_image('./ClueBar/clueBar12345.png')
+        
+        self.cb1234 = load_image('./ClueBar/clueBar1234.png')
+        self.cb1345 = load_image('./ClueBar/clueBar1345.png')
+
+        self.cb124 = load_image('./ClueBar/clueBar124.png')
+        self.cb134 = load_image('./ClueBar/clueBar134.png')
+        self.cb123 = load_image('./ClueBar/clueBar123.png')
+        
+        self.cb14 = load_image('./ClueBar/clueBar14.png')
+        self.cb12 = load_image('./ClueBar/clueBar12.png')        
+
+        self.cb1 = load_image('./ClueBar/clueBar1.png')
+        
+        self.rect = self.rg_image.get_rect()
+        self.inventory = set()
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
-        ipos = 50
-        for itemName in self.inventory:
-            i = self.inventory[itemName]
-            rect = i.image.get_rect()
-            rect.x = ipos
-            rect.y = 750
-            screen.blit(i.image, rect)
-            ipos = ipos + 120
-    def move(self, x_adj, y_adj):
-        x = min(self.rect.x + x_adj, WIN_WIDTH - self.rect.width)
+        if("clothes" in self.inventory):
+            if(self.direction):
+                screen.blit(pygame.transform.flip(self.drg_image, True, False), self.rect)
+            else:
+                screen.blit(self.drg_image, self.rect)
+        else:
+            if(self.direction):
+                screen.blit(pygame.transform.flip(self.rg_image, True, False), self.rect)
+            else:
+                screen.blit(self.rg_image, self.rect)
+        if "needle" in self.inventory:
+            if "racoon" in self.inventory:
+                if "name" in self.inventory:
+                    if "booze" in self.inventory:
+                        if "witness" in self.inventory:
+                            screen.blit(self.cb12345, (0, 720))
+                        else:
+                            screen.blit(self.cb1234, (0, 720))
+                    else:
+                        screen.blit(self.cb123, (0, 720))
+                elif "booze" in self.inventory:
+                    screen.blit(self.cb124, (0, 720))
+                else:
+                    screen.blit(self.cb12, (0, 720))
+            elif "name" in self.inventory:
+                if "booze" in self.inventory:
+                    if "witeness" in self.inventory:
+                        screen.blit(self.cb1345, (0, 720))
+                    else:
+                        screen.blit(self.cb124, (0, 720))
+            elif "booze" in self.inventory:
+                screen.blit(self.cb14, (0, 720))
+            else:
+                screen.blit(self.cb1, (0, 720))
+        else:
+            screen.blit(self.default_clue_bar, (0, 720))
+                        
+    def move(self, x_adj, y_adj, currentBg):
+        x = min(self.rect.x + x_adj, currentBg.rect.width - self.rect.width)
         x = max(0, x)
         self.rect.x = x
         self.rect.y = self.rect.y + y_adj
     def pickupItem(self, item):
-        self.inventory[item.name] = item
+        self.inventory.add(item)
+        
 class Doorway(object):
-    def __init__(self, rect, goto):
+    def __init__(self, rect, goto, goto_img):
         self.rect = rect
         self.goto = goto
+        self.goto_img = goto_img
 
         
 game = PythonGame()
