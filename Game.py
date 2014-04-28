@@ -225,7 +225,7 @@ class PythonGame:
              for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     go_on = True
-            pygame.time.delay(int(1000/30))
+             pygame.time.delay(int(1000/30))
         while 1:
             pygame.time.delay(int(1000/30))
             for event in pygame.event.get():
