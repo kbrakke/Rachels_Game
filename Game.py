@@ -1,5 +1,7 @@
 import pygame, sys
 from sets import Set
+from player import Player
+from npc import Npc
 
 WIN_WIDTH = 1300
 WIN_HEIGHT = 1010
@@ -16,39 +18,47 @@ class PythonGame:
         self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
         self.base = pygame.Surface(self.screen.get_size()).convert()
         self.base.fill((255, 255, 255))
-        self.player = Player()
+        self.player = Player(self.screen)
         clothespic = load_image('./Items/detectiveClothes.png')
         needlepic = load_image('./Items/clue1Ons.png')
+        racoonpic = load_image('./Items/clue2Ons.png')
+        bottlepic = load_image('./Items/clue3Ons.png')
         ppic = load_image('./Npcs/person1.png')
-        #prost = Npc(ppic, 400, 500, "prostitute", npc1generic1, npc1partial1, npc1found1, npc1final1, ["needle",],self.screen)
+        thugpic = load_image('./Npcs/person2.png')
+        crazy_manpic = load_image('./Npcs/person3.png')
+        prost = Npc(ppic, 400, 200, "prostitute", self.screen)
+        thug = Npc(thugpic, 600, 90, "thug", self.screen)
+        crazy_man = Npc(crazy_manpic, 700, 300, "crazy_man", self.screen)
         clothes = Item(clothespic, 450, 200, "clothes")
         needle = Item(needlepic, 700, 600, "needle")
+        racoon = Item(racoonpic, 400, 550, "racoon")
+        bottle = Item(bottlepic, 150, 250, "bottle")
         scene1 = Scene(load_image('./Backgrounds/background1.png'),
                        {"clothes" : clothes, "needle" : needle},
                        [],
                        self.screen,
                        [Doorway(pygame.Rect(0, 0, 80, 1000), "scene2", load_image("./Interaction/toMainStreet.png"))])
         scene2 = Scene(load_image('./Backgrounds/background2.png'),
-                       {},
+                       {"racoon" : racoon},
                        [],
                        self.screen,
                        [Doorway(pygame.Rect(650, 0, 80, 1000), "scene1", load_image("./Interaction/toRichyGAlley.png")),
                         Doorway(pygame.Rect(0, 0, 80, 1000), "scene3", load_image("./Interaction/toMainStreet.png"))])
         scene3 = Scene(load_image('./Backgrounds/background3.png'),
                        {},
-                       [],
+                       [prost],
                        self.screen,
                        [Doorway(pygame.Rect(1000, 0, 80, 1000), "scene2", load_image("./Interaction/toMainStreet.png")),
                         Doorway(pygame.Rect(100, 0, 80, 1000), "scene4", load_image("./Interaction/toOtherAlley.png"))])
         scene4 = Scene(load_image('./Backgrounds/background4.png'),
                        {},
-                       [],
+                       [thug],
                        self.screen,
                        [Doorway(pygame.Rect(0, 0, 80, 1000), "scene3", load_image("./Interaction/toMainStreet.png")),
                         Doorway(pygame.Rect(1000, 0, 80, 1000), "scene5", load_image("./Interaction/toOtherAlley.png"))])
         scene5 = Scene(load_image('./Backgrounds/background5.png'),
-                       {},
-                       [],
+                       {"bottle" : bottle},
+                       [crazy_man],
                        self.screen,
                        [Doorway(pygame.Rect(0, 0, 80, 1000), "scene4", load_image("./Interaction/toOtherAlley.png"))])         
         self.drunkMeter = DrunkMeter("full", self.screen)
@@ -60,7 +70,7 @@ class PythonGame:
         self.current_scene = "scene1"
         self.screen.blit(self.base, (0,0))
         self.drunkMeter.draw()
-        self.player.move(10, 160, self.scenes[self.current_scene])
+        self.player.move(200, 160, self.scenes[self.current_scene])
 
     def update(self, movement): 
         self.player.move(movement, 0, self.scenes[self.current_scene])
@@ -73,7 +83,11 @@ class PythonGame:
 
     def run(self):
         movement = 0
-        while 1:
+        game_won = False
+        #First dialog to start the game
+        self.update(movement)
+        self.converse(self.player, self.player.start_lines1 , None, [])
+        while not game_won:
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -88,12 +102,102 @@ class PythonGame:
                     if event.key == pygame.K_SPACE:
                         ret = self.scenes[self.current_scene].interact(self.player)
                         if ret != None:
-                           self.scenes[ret].enter(self.player, self.current_scene)
-                           self.current_scene =  ret
-                           #print ret
+                            self.update(0)
+                            if ret[0] == "item":
+                                if(ret[1] == "clothes"):
+                                    self.converse(self.player, self.player.clothes_lines, None, [])
+                                if(ret[1] == "needle"):
+                                    self.converse(self.player, self.player.needle_lines, None, [])
+                                if(ret[1] == "racoon"):
+                                    self.converse(self.player, self.player.racoon_lines, None, [])
+                                if(ret[1] == "bottle"):
+                                    self.converse(self.player, self.player.bottle_lines, None, [])                                    
+                            elif ret[0] == "door":
+                                self.scenes[ret[1]].enter(self.player, self.current_scene)
+                                self.current_scene =  ret[1]
+                            elif ret[0] == "npc":
+                                if(ret[1] == "prostitute"):
+                                    prost = self.scenes[self.current_scene].npcs[0]
+                                    if(self.player.met_thug):
+                                        self.converse(self.player, self.player.prost_final_lines, prost, prost.prost_final_lines)
+                                        self.player.pickupItem("name")
+                                    else:
+                                        self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)
+                                if(ret[1] == "thug"):
+                                    self.player.met_thug = True
+                                    thug = self.scenes[self.current_scene].npcs[0]
+                                    if("bottle" in self.player.inventory and "name" in self.player.inventory):
+                                        self.converse(self.player, self.player.thug_final_lines, thug, thug.thug_final_lines)
+                                        self.player.pickupItem("witness")
+                                    elif("name" in self.player.inventory):
+                                        self.converse(self.player, self.player.thug_secondary_lines, thug, thug.thug_secondary_lines)
+                                    else:
+                                        self.converse(thug, thug.thug_initial_lines, self.player, self.player.thug_initial_lines)
+                                if(ret[1] == "crazy_man"):
+                                    crazy_man = self.scenes[self.current_scene].npcs[0]
+                                    if(self.player.met_crazy_man):
+                                        if(self.player.confronted_crazy_man):
+                                            if(self.player.proved_crazy_man):
+                                                if("racoon" in self.player.inventory):
+                                                    self.converse(self.player, self.player.crazy_man_final_lines, crazy_man, crazy_man.crazy_man_final_lines)
+                                                    game_won = True
+                                                else:
+                                                    self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
+                                            elif("witness" in self.player.inventory):
+                                                self.player.proved_crazy_man = True
+                                                self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.craz_man_tertiary_lines)
+                                            else:
+                                                self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)                                                
+                                        elif("bottle" in self.player.inventory):
+                                            self.player.confronted_crazy_man = True
+                                            self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)
+                                        else:
+                                            self.converse(crazy_man, crazy_man.crazy_man_initial_lines, None, [])
+                                    else:
+                                        self.player.met_crazy_man = True
+                                        self.converse(crazy_man, crazy_man.crazy_man_initial_lines, None, [])
+                            elif ret[0] == "event":
+                                if (ret[1] == "find_clothes"):
+                                    self.converse(self.player, self.player.find_clothes_lines, None, [])
+                                if(ret[1] == "find_needle"):
+                                    self.converse(self.player, self.player.find_needle_lines, None, [])
                 if event.type == pygame.KEYUP:
                     movement = 0
-            self.update(movement)       
+            self.update(movement)
+            
+    def converse(self, subject1, lines1, subject2, lines2):
+        lines1_pos = 0
+        lines2_pos = 0
+        while ((lines1_pos < len(lines1)) or (lines2_pos < len(lines2))):
+            if lines1[lines1_pos] != None:
+                subject1.say(lines1[lines1_pos], self.scenes[self.current_scene])
+                pygame.display.update()
+                self.screen.blit(self.base, (0,0))       
+                self.scenes[self.current_scene].draw(self.player)
+                self.drunkMeter.draw()
+                self.player.draw(self.screen)
+                wait = True
+                while wait:
+                    for event in pygame.event.get():
+                        if event.type == pygame.KEYDOWN:
+                            wait = False
+            lines1_pos += 1
+            if(subject2 != None):
+                if(lines2_pos < len(lines2)):
+                    if lines2[lines2_pos] != None:
+                        subject2.say(lines2[lines2_pos], self.scenes[self.current_scene])           
+                        pygame.display.update()
+                        self.screen.blit(self.base, (0,0))  
+                        self.scenes[self.current_scene].draw(self.player)
+                        self.drunkMeter.draw()
+                        self.player.draw(self.screen)
+                        wait = True
+                        while wait:
+                            for event in pygame.event.get():
+                                if event.type == pygame.KEYDOWN:
+                                    wait = False
+            lines2_pos += 1 
+
             
 
 
@@ -141,21 +245,29 @@ class Scene(object):
         item_to_remove = None
         for itemName in self.items:
             if(player.rect.colliderect(self.items[itemName].rect)):
-                self.items[itemName].remove(self.screen, self.background)
-                player.pickupItem(itemName)
-                item_to_remove = itemName
+                if("clothes" in player.inventory or itemName == "clothes"):
+                    self.items[itemName].remove(self.screen, self.background)
+                    player.pickupItem(itemName)
+                    item_to_remove = itemName
+                else:
+                    return("event", "find_clothes")
         if (item_to_remove != None):
             del self.items[item_to_remove]
+            return ("item", item_to_remove)
         scene_to_go_to = None
         for door in self.exits:
             if(player.rect.colliderect(door.rect)):
-                scene_to_go_to = door.goto
-        if scene_to_go_to != None:
-            return scene_to_go_to
+                if("clothes" in player.inventory):
+                    if("needle" in player.inventory):
+                        return ("door", door.goto)
+                    else:
+                        return("event", "find_needle")
+                else:
+                    return ("event", "find_clothes")
+            
         for npc in self.npcs:
             if(player.rect.colliderect(npc.rect)):
-                self.hideInteraction()
-                npc.speak(player)
+                return("npc", npc.name)
         return None
     def enter(self, player, last_scene):
         for door in self.exits:
@@ -190,121 +302,8 @@ class Item(pygame.sprite.Sprite):
     def remove(self, screen, image):
         screen.blit(image, self.rect, self.rect)
         
-class Npc(pygame.sprite.Sprite):
-    def __init__(self, image, x, y, name, generic_lines, partial_lines, found_line, final_lines, trigger_items, screen):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.name = name
-        self.generic_lines = generic_lines
-        self.partial_lines = partial_lines
-        self.found_line = found_line
-        self.final_lines = final_lines
-        self.trigger_items = trigger_items
-        self.quest_complete = False
-        self.screen = screen
-    def draw(self):
-        self.screen.blit(self.image, self.rect)
-    def speak_line(self, line):
-        r = line.get_rect()
-        r.x = HALF_WIDTH - int(r.width/2)
-        r.y = 50
-        self.screen.blit(line, r)
-        pygame.display.update()
-        pygame.time.delay(700)
-    def speak(self, player):
-        contains_count = 0
-        for item in self.trigger_items:
-            if(item in player.inventory.keys()):
-                contains_count = contains_count + 1
-        if contains_count == len(self.trigger_items):
-            if(self.quest_complete):
-                self.speak_line(self.final_lines)
-            else:
-                self.speak_line(self.found_line)
-                self.quest_complete = True
-        elif contains_count > 0:
-            self.speak_line(self.partial_lines)
-        else:
-            self.speak_line(self.generic_lines)
+
             
-class Player(pygame.sprite.Sprite):
-    def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
-        self.direction = False
-        self.current_step = 0
-        self.moved = 0
-        self.rg_images = [load_image("./Richie/RGIdleWalk1.png"),load_image("./Richie/RGWalk2.png"),load_image("./Richie/RGIdleWalk1.png"),load_image("./Richie/RGWalk3.png")]
-        self.drg_images = [load_image("./Richie/DRGstandWalk2.png"),load_image("./Richie/DRGWalk1.png"),load_image("./Richie/DRGstandWalk2.png"),load_image("./Richie/DRGWalk3.png")]
-        self.default_clue_bar = load_image('./ClueBar/clueBar.png')
-        self.cb12345 = load_image('./ClueBar/clueBar12345.png')
-        
-        self.cb1234 = load_image('./ClueBar/clueBar1234.png')
-        self.cb1345 = load_image('./ClueBar/clueBar1345.png')
-
-        self.cb124 = load_image('./ClueBar/clueBar124.png')
-        self.cb134 = load_image('./ClueBar/clueBar134.png')
-        self.cb123 = load_image('./ClueBar/clueBar123.png')
-        
-        self.cb14 = load_image('./ClueBar/clueBar14.png')
-        self.cb12 = load_image('./ClueBar/clueBar12.png')        
-
-        self.cb1 = load_image('./ClueBar/clueBar1.png')
-        
-        self.rect = self.rg_images[0].get_rect()
-        self.inventory = set()
-    def draw(self, screen):
-        if("clothes" in self.inventory):
-            if(self.direction):
-                screen.blit(pygame.transform.flip(self.drg_images[self.current_step], True, False), self.rect)
-            else:
-                screen.blit(self.drg_images[self.current_step], self.rect)
-        else:
-            if(self.direction):
-                screen.blit(pygame.transform.flip(self.rg_images[self.current_step], True, False), self.rect)
-            else:
-                screen.blit(self.rg_images[self.current_step], self.rect)
-        if "needle" in self.inventory:
-            if "racoon" in self.inventory:
-                if "name" in self.inventory:
-                    if "booze" in self.inventory:
-                        if "witness" in self.inventory:
-                            screen.blit(self.cb12345, (0, 720))
-                        else:
-                            screen.blit(self.cb1234, (0, 720))
-                    else:
-                        screen.blit(self.cb123, (0, 720))
-                elif "booze" in self.inventory:
-                    screen.blit(self.cb124, (0, 720))
-                else:
-                    screen.blit(self.cb12, (0, 720))
-            elif "name" in self.inventory:
-                if "booze" in self.inventory:
-                    if "witeness" in self.inventory:
-                        screen.blit(self.cb1345, (0, 720))
-                    else:
-                        screen.blit(self.cb124, (0, 720))
-            elif "booze" in self.inventory:
-                screen.blit(self.cb14, (0, 720))
-            else:
-                screen.blit(self.cb1, (0, 720))
-        else:
-            screen.blit(self.default_clue_bar, (0, 720))
-                        
-    def move(self, x_adj, y_adj, currentBg):
-        x = min(self.rect.x + x_adj, currentBg.rect.width - self.rect.width)
-        x = max(0, x)
-        self.rect.x = x
-        self.rect.y = self.rect.y + y_adj
-        if x_adj != 0:
-            self.moved = self.moved +1
-            if self.moved > 5:
-                self.current_step = (self.current_step + 1) % 4
-                self.moved = 0
-    def pickupItem(self, item):
-        self.inventory.add(item)
         
 class Doorway(object):
     def __init__(self, rect, goto, goto_img):
