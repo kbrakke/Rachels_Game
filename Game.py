@@ -77,7 +77,7 @@ class PythonGame:
         self.current_scene = "scene1"
         self.screen.blit(self.base, (0,0))
         self.drunk_meter.draw()
-        self.player.move(200, 160, self.scenes[self.current_scene])
+        self.player.move(200, 240, self.scenes[self.current_scene])
 
     def update(self, movement):
         if(self.drunk_meter.state == "full"):
@@ -271,10 +271,10 @@ class PythonGame:
         self.drunk_meter.draw()
         self.player.draw(self.screen, True)
         pygame.display.update()
-        pygame.time.delay(int(1500))
+        pygame.time.delay(int(3000))
         self.player.say(self.player.burp, self.scenes[self.current_scene])
         pygame.display.update()
-        pygame.time.delay(int(1500) )                
+        pygame.time.delay(int(3000))                
         self.burp()
         
     def burp(self):
