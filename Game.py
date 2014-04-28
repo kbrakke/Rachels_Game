@@ -19,6 +19,9 @@ class PythonGame:
         self.base = pygame.Surface(self.screen.get_size()).convert()
         self.base.fill((255, 255, 255))
         self.player = Player(self.screen)
+        self.threshold = 150
+        self.timer = 0
+        self.rising = False
         self.intro_1 = load_image('./Cutscenes/DRGStartComic1Small.jpg')
         self.intro_2 = load_image('./Cutscenes/DRGStartComic2Small.jpg')
         self.end_1 = load_image('./Cutscenes/DRGEndComic1Small.jpg')
@@ -65,7 +68,7 @@ class PythonGame:
                        [crazy_man],
                        self.screen,
                        [Doorway(pygame.Rect(0, 0, 80, 1000), "scene4", load_image("./Interaction/toOtherAlley.png"))])         
-        self.drunkMeter = DrunkMeter("full", self.screen)
+        self.drunk_meter = DrunkMeter("med", self.screen)
         self.scenes["scene1"] = scene1
         self.scenes["scene2"] = scene2
         self.scenes["scene3"] = scene3
@@ -73,16 +76,29 @@ class PythonGame:
         self.scenes["scene5"] = scene5
         self.current_scene = "scene1"
         self.screen.blit(self.base, (0,0))
-        self.drunkMeter.draw()
+        self.drunk_meter.draw()
         self.player.move(200, 160, self.scenes[self.current_scene])
 
-    def update(self, movement): 
+    def update(self, movement):
+        if(self.drunk_meter.state == "full"):
+            if movement == 7:
+                movement = 2
+            elif movement == -7:
+                movement = -2
         self.player.move(movement, 0, self.scenes[self.current_scene])
         self.screen.blit(self.base, (0,0))       
         self.scenes[self.current_scene].draw(self.player)
-        self.drunkMeter.draw()
+        self.drunk_meter.draw()
         self.player.draw(self.screen)
         pygame.display.update()
+        self.timer = self.timer + 1
+        if(self.timer >= self.threshold):
+            self.timer = 0
+            self.drunk_meter.next_state()
+            self.burp()
+        if(self.drunk_meter.state == "empty"):
+            self.drink()
+            self.drunk_meter.next_state()
         pygame.time.delay(int(1000/30))
 
     def run(self):
@@ -118,9 +134,9 @@ class PythonGame:
                         sys.exit()
                     if event.key == pygame.K_LEFT:
                         self.player.direction = True
-                        movement = -5
+                        movement = -7
                     if event.key == pygame.K_RIGHT:
-                        movement = 5
+                        movement = 7
                         self.player.direction = False
                     if event.key == pygame.K_SPACE:
                         ret = self.scenes[self.current_scene].interact(self.player)
@@ -207,10 +223,11 @@ class PythonGame:
         go_on = False
         while not go_on:
              for event in pygame.event.get():
-                pygame.time.delay(int(1000/30))
                 if event.type == pygame.KEYDOWN:
-                    go_on = True             
+                    go_on = True
+            pygame.time.delay(int(1000/30))
         while 1:
+            pygame.time.delay(int(1000/30))
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     pygame.display.quit()
@@ -225,7 +242,7 @@ class PythonGame:
                 pygame.display.update()
                 self.screen.blit(self.base, (0,0))       
                 self.scenes[self.current_scene].draw(self.player)
-                self.drunkMeter.draw()
+                self.drunk_meter.draw()
                 self.player.draw(self.screen)
                 wait = True
                 while wait:
@@ -240,14 +257,35 @@ class PythonGame:
                         pygame.display.update()
                         self.screen.blit(self.base, (0,0))  
                         self.scenes[self.current_scene].draw(self.player)
-                        self.drunkMeter.draw()
+                        self.drunk_meter.draw()
                         self.player.draw(self.screen)
                         wait = True
                         while wait:
                             for event in pygame.event.get():
                                 if event.type == pygame.KEYDOWN:
                                     wait = False
-            lines2_pos += 1 
+            lines2_pos += 1
+    def drink(self):
+        self.screen.blit(self.base, (0,0))       
+        self.scenes[self.current_scene].draw(self.player)
+        self.drunk_meter.draw()
+        self.player.draw(self.screen, True)
+        pygame.display.update()
+        pygame.time.delay(int(1500))
+        self.player.say(self.player.burp, self.scenes[self.current_scene])
+        pygame.display.update()
+        pygame.time.delay(int(1500) )                
+        self.burp()
+        
+    def burp(self):
+        self.screen.blit(self.base, (0,0))       
+        self.scenes[self.current_scene].draw(self.player)
+        self.drunk_meter.draw()
+        self.player.draw(self.screen)
+        self.player.say(self.player.burp, self.scenes[self.current_scene])
+        pygame.display.update()
+        pygame.time.delay(int(500))
+        
 
             
 
@@ -327,11 +365,13 @@ class Scene(object):
                 
 class DrunkMeter(pygame.sprite.Sprite):
     def __init__(self, state, screen):
-        self.full = load_image('./DrunkMeter/drunkMeter.png')
-        self.med = load_image('./DrunkMeter/middleMeter.png')
-        self.empty = load_image('./DrunkMeter/soberMeter.png')
+        self.full = load_image('./drunkMeter/drunkMeter.png')
+        self.med = load_image('./drunkMeter/middleMeter.png')
+        self.empty = load_image('./drunkMeter/soberMeter.png')
         self.state = state
+        self.past_state = "full"
         self.screen = screen
+        self.next_state_dict = {"full" : {"med" : "med"}, "med" : {"full" : "empty", "empty" : "full"}, "empty" : {"med" : "med"}}
     def draw(self):
         if self.state == "full":
             self.screen.blit(self.full, (1060, 0))
@@ -339,6 +379,10 @@ class DrunkMeter(pygame.sprite.Sprite):
             self.screen.blit(self.med, (1060, 0))
         elif self.state == "empty":
             self.screen.blit(self.empty, (1060, 0))
+    def next_state(self):
+        next_state = self.next_state_dict[self.state][self.past_state]
+        self.past_state = self.state
+        self.state = next_state
             
 class Item(pygame.sprite.Sprite):
     def __init__(self, image, x, y, name):

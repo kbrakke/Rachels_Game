@@ -14,6 +14,9 @@ class Player(pygame.sprite.Sprite):
         #walking
         self.rg_images = [load_image("./Richie/RGIdleWalk1.png"),load_image("./Richie/RGWalk2.png"),load_image("./Richie/RGIdleWalk1.png"),load_image("./Richie/RGWalk3.png")]
         self.drg_images = [load_image("./Richie/DRGstandWalk2.png"),load_image("./Richie/DRGWalk1.png"),load_image("./Richie/DRGstandWalk2.png"),load_image("./Richie/DRGWalk3.png")]
+
+        self.burp = (load_image("./text/textDRG_misc.png"), False)
+        self.drg_drinking = load_image("./Richie/DRGDrinking.png")
         ## Clue Bar Images
         self.default_clue_bar = load_image('./ClueBar/clueBar.png')
         self.cb12345 = load_image('./ClueBar/clueBar12345.png')
@@ -109,12 +112,18 @@ class Player(pygame.sprite.Sprite):
         
         self.rect = self.rg_images[0].get_rect()
         self.inventory = set()
-    def draw(self, screen):
+    def draw(self, screen, drinking = False): 
         if("clothes" in self.inventory):
-            if(self.direction):
-                screen.blit(pygame.transform.flip(self.drg_images[self.current_step], True, False), self.rect)
+            if(drinking):
+                if(self.direction):
+                    screen.blit(pygame.transform.flip(self.drg_drinking, True, False), self.rect)
+                else:
+                    screen.blit(self.drg_drinking, self.rect) 
             else:
-                screen.blit(self.drg_images[self.current_step], self.rect)
+                if(self.direction):
+                    screen.blit(pygame.transform.flip(self.drg_images[self.current_step], True, False), self.rect)
+                else:
+                    screen.blit(self.drg_images[self.current_step], self.rect)
         else:
             if(self.direction):
                 screen.blit(pygame.transform.flip(self.rg_images[self.current_step], True, False), self.rect)
