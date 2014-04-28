@@ -19,6 +19,10 @@ class PythonGame:
         self.base = pygame.Surface(self.screen.get_size()).convert()
         self.base.fill((255, 255, 255))
         self.player = Player(self.screen)
+        self.intro_1 = load_image('./Cutscenes/DRGStartComic1Small.jpg')
+        self.intro_2 = load_image('./Cutscenes/DRGStartComic2Small.jpg')
+        self.end_1 = load_image('./Cutscenes/DRGEndComic1Small.jpg')
+        self.end_2 = load_image('./Cutscenes/DRGEndComic2Small.jpg')
         clothespic = load_image('./Items/detectiveClothes.png')
         needlepic = load_image('./Items/clue1Ons.png')
         racoonpic = load_image('./Items/clue2Ons.png')
@@ -84,6 +88,25 @@ class PythonGame:
     def run(self):
         movement = 0
         game_won = False
+        #intial cutscene
+        self.screen.blit(self.base, (0,0)) 
+        self.screen.blit(self.intro_1, (0,0))
+        pygame.display.update()
+        go_on = False
+        while not go_on:
+             for event in pygame.event.get():
+                pygame.time.delay(int(1000/30))
+                if event.type == pygame.KEYDOWN:
+                    go_on = True
+        self.screen.blit(self.base, (0,0)) 
+        self.screen.blit(self.intro_2, (0,0))
+        pygame.display.update()
+        go_on = False
+        while not go_on:
+             for event in pygame.event.get():
+                pygame.time.delay(int(1000/30))
+                if event.type == pygame.KEYDOWN:
+                    go_on = True                    
         #First dialog to start the game
         self.update(movement)
         self.converse(self.player, self.player.start_lines1 , None, [])
@@ -118,10 +141,14 @@ class PythonGame:
                             elif ret[0] == "npc":
                                 if(ret[1] == "prostitute"):
                                     prost = self.scenes[self.current_scene].npcs[0]
-                                    if(self.player.met_thug):
-                                        self.converse(self.player, self.player.prost_final_lines, prost, prost.prost_final_lines)
-                                        self.player.pickupItem("name")
+                                    if(self.player.met_prostitute):
+                                        if(self.player.met_thug):
+                                            self.converse(self.player, self.player.prost_final_lines, prost, prost.prost_final_lines)
+                                            self.player.pickupItem("name")
+                                        else:
+                                            self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)    
                                     else:
+                                        self.player.met_prostitute = True
                                         self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)
                                 if(ret[1] == "thug"):
                                     self.player.met_thug = True
@@ -145,7 +172,7 @@ class PythonGame:
                                                     self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
                                             elif("witness" in self.player.inventory):
                                                 self.player.proved_crazy_man = True
-                                                self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.craz_man_tertiary_lines)
+                                                self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
                                             else:
                                                 self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)                                                
                                         elif("bottle" in self.player.inventory):
@@ -164,6 +191,30 @@ class PythonGame:
                 if event.type == pygame.KEYUP:
                     movement = 0
             self.update(movement)
+        #final cutscene
+        self.screen.blit(self.base, (0,0)) 
+        self.screen.blit(self.end_1, (0,0))
+        pygame.display.update()
+        go_on = False
+        while not go_on:
+             for event in pygame.event.get():
+                pygame.time.delay(int(1000/30))
+                if event.type == pygame.KEYDOWN:
+                    go_on = True
+        self.screen.blit(self.base, (0,0)) 
+        self.screen.blit(self.end_2, (0,0))
+        pygame.display.update()
+        go_on = False
+        while not go_on:
+             for event in pygame.event.get():
+                pygame.time.delay(int(1000/30))
+                if event.type == pygame.KEYDOWN:
+                    go_on = True             
+        while 1:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    pygame.display.quit()
+                    sys.exit()
             
     def converse(self, subject1, lines1, subject2, lines2):
         lines1_pos = 0

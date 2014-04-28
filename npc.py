@@ -47,7 +47,7 @@ class Npc(pygame.sprite.Sprite):
         #Crazy_Man_Tertiary
         textB5_P3_9_AC5 = (load_image('./text/Background5/textB5_P3_9_AC5.png'), False)
         textB5_P3_11_AC5 = (load_image('./text/Background5/textB5_P3_11_AC5.png'), False)
-        self.crazy_man_secondary_lines = [textB5_P3_9_AC5, textB5_P3_11_AC5]        
+        self.crazy_man_tertiary_lines = [textB5_P3_9_AC5, textB5_P3_11_AC5]        
         #Crazy_Man_Final
         textB5_P3_13_AC2 = (load_image('./text/Background5/textB5_P3_13_AC2.png'), False)
         self.crazy_man_final_lines = [textB5_P3_13_AC2]

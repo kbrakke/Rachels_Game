@@ -23,6 +23,7 @@ class Player(pygame.sprite.Sprite):
         self.cb134 = load_image('./ClueBar/clueBar134.png')
         self.cb123 = load_image('./ClueBar/clueBar123.png')
         self.cb14 = load_image('./ClueBar/clueBar14.png')
+        self.cb13 = load_image('./ClueBar/clueBar13.png')
         self.cb12 = load_image('./ClueBar/clueBar12.png')        
         self.cb1 = load_image('./ClueBar/clueBar1.png')
         ##talking images
@@ -57,6 +58,7 @@ class Player(pygame.sprite.Sprite):
 
         self.bottle_lines = [textB5_C4_1]
         #Prost_Initial
+        self.met_prostitute = False
         textB3_P1_1 = (load_image('./text/Background3/textB3_P1_1.png'), False)
         textB3_P1_3 = (load_image('./text/Background3/textB3_P1_3.png'), False)
         textB3_P1_5 = (load_image('./text/Background3/textB3_P1_5.png'), False)
@@ -102,7 +104,7 @@ class Player(pygame.sprite.Sprite):
         self.crazy_man_tertiary_lines = [textB5_P3_8_AC5, textB5_P3_10_AC5]
         #Crazy_Man_Final
         textB5_P3_12_AC2 = (load_image('./text/Background5/textB5_P3_12_AC2.png'), True)
-        self.craz_man_final_lines = [textB5_P3_12_AC2]
+        self.crazy_man_final_lines = [textB5_P3_12_AC2]
         
         
         self.rect = self.rg_images[0].get_rect()
@@ -123,27 +125,29 @@ class Player(pygame.sprite.Sprite):
                 if "name" in self.inventory:
                     if "bottle" in self.inventory:
                         if "witness" in self.inventory:
-                            screen.blit(self.cb12345, (0, 720))
+                            screen.blit(self.cb12345, (0, 700))
                         else:
-                            screen.blit(self.cb1234, (0, 720))
+                            screen.blit(self.cb1234, (0, 700))
                     else:
-                        screen.blit(self.cb123, (0, 720))
+                        screen.blit(self.cb123, (0, 700))
                 elif "bottle" in self.inventory:
-                    screen.blit(self.cb124, (0, 720))
+                    screen.blit(self.cb124, (0, 700))
                 else:
-                    screen.blit(self.cb12, (0, 720))
+                    screen.blit(self.cb12, (0, 700))
             elif "name" in self.inventory:
                 if "bottle" in self.inventory:
-                    if "witeness" in self.inventory:
-                        screen.blit(self.cb1345, (0, 720))
+                    if "witness" in self.inventory:
+                        screen.blit(self.cb1345, (0, 700))
                     else:
-                        screen.blit(self.cb124, (0, 720))
+                        screen.blit(self.cb134, (0, 700))
+                else:
+                    screen.blit(self.cb13, (0, 700))
             elif "bottle" in self.inventory:
-                screen.blit(self.cb14, (0, 720))
+                screen.blit(self.cb14, (0, 700))
             else:
-                screen.blit(self.cb1, (0, 720))
+                screen.blit(self.cb1, (0, 700))
         else:
-            screen.blit(self.default_clue_bar, (0, 720))
+            screen.blit(self.default_clue_bar, (0, 700))
                         
     def move(self, x_adj, y_adj, currentBg):
         x = min(self.rect.x + x_adj, currentBg.rect.width - self.rect.width)
