@@ -26,6 +26,7 @@ class PythonGame:
         self.intro_2 = load_image('./Cutscenes/DRGStartComic2Small.jpg')
         self.end_1 = load_image('./Cutscenes/DRGEndComic1Small.jpg')
         self.end_2 = load_image('./Cutscenes/DRGEndComic2Small.jpg')
+        self.title = load_image('./Backgrounds/DRGTitleScreen.png')
         clothespic = load_image('./Items/detectiveClothes.png')
         needlepic = load_image('./Items/clue1Ons.png')
         racoonpic = load_image('./Items/clue2Ons.png')
@@ -102,136 +103,142 @@ class PythonGame:
         pygame.time.delay(int(1000/30))
 
     def run(self):
-        movement = 0
-        game_won = False
-        #intial cutscene
-        self.screen.blit(self.base, (0,0)) 
-        self.screen.blit(self.intro_1, (0,0))
-        pygame.display.update()
-        go_on = False
-        while not go_on:
-             for event in pygame.event.get():
-                pygame.time.delay(int(1000/30))
-                if event.type == pygame.KEYDOWN:
-                    go_on = True
-        self.screen.blit(self.base, (0,0)) 
-        self.screen.blit(self.intro_2, (0,0))
-        pygame.display.update()
-        go_on = False
-        while not go_on:
-             for event in pygame.event.get():
-                pygame.time.delay(int(1000/30))
-                if event.type == pygame.KEYDOWN:
-                    go_on = True                    
-        #First dialog to start the game
-        self.update(movement)
-        self.converse(self.player, self.player.start_lines1 , None, [])
-        while not game_won:
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        pygame.display.quit()
-                        sys.exit()
-                    if event.key == pygame.K_LEFT:
-                        self.player.direction = True
-                        movement = -7
-                    if event.key == pygame.K_RIGHT:
-                        movement = 7
-                        self.player.direction = False
-                    if event.key == pygame.K_SPACE:
-                        ret = self.scenes[self.current_scene].interact(self.player)
-                        if ret != None:
-                            self.update(0)
-                            if ret[0] == "item":
-                                if(ret[1] == "clothes"):
-                                    self.converse(self.player, self.player.clothes_lines, None, [])
-                                if(ret[1] == "needle"):
-                                    self.converse(self.player, self.player.needle_lines, None, [])
-                                if(ret[1] == "racoon"):
-                                    self.converse(self.player, self.player.racoon_lines, None, [])
-                                if(ret[1] == "bottle"):
-                                    self.converse(self.player, self.player.bottle_lines, None, [])                                    
-                            elif ret[0] == "door":
-                                self.scenes[ret[1]].enter(self.player, self.current_scene)
-                                self.current_scene =  ret[1]
-                            elif ret[0] == "npc":
-                                if(ret[1] == "prostitute"):
-                                    prost = self.scenes[self.current_scene].npcs[0]
-                                    if(self.player.met_prostitute):
-                                        if(self.player.met_thug):
-                                            self.converse(self.player, self.player.prost_final_lines, prost, prost.prost_final_lines)
-                                            self.player.pickupItem("name")
-                                        else:
-                                            self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)    
-                                    else:
-                                        self.player.met_prostitute = True
-                                        self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)
-                                if(ret[1] == "thug"):
-                                    self.player.met_thug = True
-                                    thug = self.scenes[self.current_scene].npcs[0]
-                                    if("bottle" in self.player.inventory and "name" in self.player.inventory):
-                                        self.converse(self.player, self.player.thug_final_lines, thug, thug.thug_final_lines)
-                                        self.player.pickupItem("witness")
-                                    elif("name" in self.player.inventory):
-                                        self.converse(self.player, self.player.thug_secondary_lines, thug, thug.thug_secondary_lines)
-                                    else:
-                                        self.converse(thug, thug.thug_initial_lines, self.player, self.player.thug_initial_lines)
-                                if(ret[1] == "crazy_man"):
-                                    crazy_man = self.scenes[self.current_scene].npcs[0]
-                                    if(self.player.met_crazy_man):
-                                        if(self.player.confronted_crazy_man):
-                                            if(self.player.proved_crazy_man):
-                                                if("racoon" in self.player.inventory):
-                                                    self.converse(self.player, self.player.crazy_man_final_lines, crazy_man, crazy_man.crazy_man_final_lines)
-                                                    game_won = True
-                                                else:
-                                                    self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
-                                            elif("witness" in self.player.inventory):
-                                                self.player.proved_crazy_man = True
-                                                self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
-                                            else:
-                                                self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)                                                
-                                        elif("bottle" in self.player.inventory):
-                                            self.player.confronted_crazy_man = True
-                                            self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)
-                                        else:
-                                            self.converse(crazy_man, crazy_man.crazy_man_initial_lines, None, [])
-                                    else:
-                                        self.player.met_crazy_man = True
-                                        self.converse(crazy_man, crazy_man.crazy_man_initial_lines, None, [])
-                            elif ret[0] == "event":
-                                if (ret[1] == "find_clothes"):
-                                    self.converse(self.player, self.player.find_clothes_lines, None, [])
-                                if(ret[1] == "find_needle"):
-                                    self.converse(self.player, self.player.find_needle_lines, None, [])
-                if event.type == pygame.KEYUP:
-                    movement = 0
+        play_game = True
+        self.__init__()
+        while play_game:
+            start = False
+            while not start:
+                self.screen.blit(self.base, (0,0)) 
+                self.screen.blit(self.title, (0,0))
+                pygame.display.update()
+                for event in pygame.event.get():
+                    pygame.time.delay(int(1000/30))
+                    if event.type == pygame.KEYDOWN:
+                        start= True
+            movement = 0
+            game_won = False
+            #intial cutscene
+            self.screen.blit(self.base, (0,0)) 
+            self.screen.blit(self.intro_1, (0,0))
+            pygame.display.update()
+            go_on = False
+            while not go_on:
+                 for event in pygame.event.get():
+                    pygame.time.delay(int(1000/30))
+                    if event.type == pygame.KEYDOWN:
+                        go_on = True
+            self.screen.blit(self.base, (0,0)) 
+            self.screen.blit(self.intro_2, (0,0))
+            pygame.display.update()
+            go_on = False
+            while not go_on:
+                 for event in pygame.event.get():
+                    pygame.time.delay(int(1000/30))
+                    if event.type == pygame.KEYDOWN:
+                        go_on = True                    
+            #First dialog to start the game
             self.update(movement)
-        #final cutscene
-        self.screen.blit(self.base, (0,0)) 
-        self.screen.blit(self.end_1, (0,0))
-        pygame.display.update()
-        go_on = False
-        while not go_on:
-             for event in pygame.event.get():
-                pygame.time.delay(int(1000/30))
-                if event.type == pygame.KEYDOWN:
-                    go_on = True
-        self.screen.blit(self.base, (0,0)) 
-        self.screen.blit(self.end_2, (0,0))
-        pygame.display.update()
-        go_on = False
-        while not go_on:
-             for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    go_on = True
-             pygame.time.delay(int(1000/30))
-        while 1:
-            pygame.time.delay(int(1000/30))
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    pygame.display.quit()
-                    sys.exit()
+            self.converse(self.player, self.player.start_lines1 , None, [])
+            while not game_won:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            pygame.display.quit()
+                            sys.exit()
+                        if event.key == pygame.K_LEFT:
+                            self.player.direction = True
+                            movement = -7
+                        if event.key == pygame.K_RIGHT:
+                            movement = 7
+                            self.player.direction = False
+                        if event.key == pygame.K_SPACE:
+                            ret = self.scenes[self.current_scene].interact(self.player)
+                            if ret != None:
+                                self.update(0)
+                                if ret[0] == "item":
+                                    if(ret[1] == "clothes"):
+                                        self.converse(self.player, self.player.clothes_lines, None, [])
+                                    if(ret[1] == "needle"):
+                                        self.converse(self.player, self.player.needle_lines, None, [])
+                                    if(ret[1] == "racoon"):
+                                        self.converse(self.player, self.player.racoon_lines, None, [])
+                                    if(ret[1] == "bottle"):
+                                        self.converse(self.player, self.player.bottle_lines, None, [])                                    
+                                elif ret[0] == "door":
+                                    self.scenes[ret[1]].enter(self.player, self.current_scene)
+                                    self.current_scene =  ret[1]
+                                elif ret[0] == "npc":
+                                    if(ret[1] == "prostitute"):
+                                        prost = self.scenes[self.current_scene].npcs[0]
+                                        if(self.player.met_prostitute):
+                                            if(self.player.met_thug):
+                                                self.converse(self.player, self.player.prost_final_lines, prost, prost.prost_final_lines)
+                                                self.player.pickupItem("name")
+                                            else:
+                                                self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)    
+                                        else:
+                                            self.player.met_prostitute = True
+                                            self.converse(self.player, self.player.prost_initial_lines, prost, prost.prost_initial_lines)
+                                    if(ret[1] == "thug"):
+                                        self.player.met_thug = True
+                                        thug = self.scenes[self.current_scene].npcs[0]
+                                        if("bottle" in self.player.inventory and "name" in self.player.inventory):
+                                            self.converse(self.player, self.player.thug_final_lines, thug, thug.thug_final_lines)
+                                            self.player.pickupItem("witness")
+                                        elif("name" in self.player.inventory):
+                                            self.converse(self.player, self.player.thug_secondary_lines, thug, thug.thug_secondary_lines)
+                                        else:
+                                            self.converse(thug, thug.thug_initial_lines, self.player, self.player.thug_initial_lines)
+                                    if(ret[1] == "crazy_man"):
+                                        crazy_man = self.scenes[self.current_scene].npcs[0]
+                                        if(self.player.met_crazy_man):
+                                            if(self.player.confronted_crazy_man):
+                                                if(self.player.proved_crazy_man):
+                                                    if("racoon" in self.player.inventory):
+                                                        self.converse(self.player, self.player.crazy_man_final_lines, crazy_man, crazy_man.crazy_man_final_lines)
+                                                        game_won = True
+                                                    else:
+                                                        self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
+                                                elif("witness" in self.player.inventory):
+                                                    self.player.proved_crazy_man = True
+                                                    self.converse(self.player, self.player.crazy_man_tertiary_lines, crazy_man, crazy_man.crazy_man_tertiary_lines)
+                                                else:
+                                                    self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)                                                
+                                            elif("bottle" in self.player.inventory):
+                                                self.player.confronted_crazy_man = True
+                                                self.converse(self.player, self.player.crazy_man_secondary_lines, crazy_man, crazy_man.crazy_man_secondary_lines)
+                                            else:
+                                                self.converse(crazy_man, crazy_man.crazy_man_initial_lines, None, [])
+                                        else:
+                                            self.player.met_crazy_man = True
+                                            self.converse(crazy_man, crazy_man.crazy_man_initial_lines, None, [])
+                                elif ret[0] == "event":
+                                    if (ret[1] == "find_clothes"):
+                                        self.converse(self.player, self.player.find_clothes_lines, None, [])
+                                    if(ret[1] == "find_needle"):
+                                        self.converse(self.player, self.player.find_needle_lines, None, [])
+                    if event.type == pygame.KEYUP:
+                        movement = 0
+                self.update(movement)
+            #final cutscene
+            self.screen.blit(self.base, (0,0)) 
+            self.screen.blit(self.end_1, (0,0))
+            pygame.display.update()
+            go_on = False
+            while not go_on:
+                 for event in pygame.event.get():
+                    pygame.time.delay(int(1000/30))
+                    if event.type == pygame.KEYDOWN:
+                        go_on = True
+            self.screen.blit(self.base, (0,0)) 
+            self.screen.blit(self.end_2, (0,0))
+            pygame.display.update()
+            go_on = False
+            while not go_on:
+                 for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        go_on = True
+            return 0 
             
     def converse(self, subject1, lines1, subject2, lines2):
         lines1_pos = 0
@@ -406,6 +413,7 @@ class Doorway(object):
         self.goto = goto
         self.goto_img = goto_img
 
-        
-game = PythonGame()
-game.run()
+
+while 1:
+    game = PythonGame()
+    game.run()
