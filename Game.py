@@ -15,7 +15,7 @@ class PythonGame:
     def __init__(self):
         #Dictionary of potential background images
         self.scenes = {}
-        self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+        self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))#,  pygame.RESIZABLE)
         self.base = pygame.Surface(self.screen.get_size()).convert()
         self.base.fill((255, 255, 255))
         self.player = Player(self.screen)
@@ -140,7 +140,11 @@ class PythonGame:
             self.update(movement)
             self.converse(self.player, self.player.start_lines1 , None, [])
             while not game_won:
+                print(str(pygame.display.Info()))
                 for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.display.quit()
+                        sys.exit()
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             pygame.display.quit()
