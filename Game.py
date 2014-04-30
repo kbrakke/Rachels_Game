@@ -140,7 +140,7 @@ class PythonGame:
             self.update(movement)
             self.converse(self.player, self.player.start_lines1 , None, [])
             while not game_won:
-                print(str(pygame.display.Info()))
+                #print(str(pygame.display.Info()))
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.display.quit()
