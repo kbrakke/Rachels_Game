@@ -21,11 +21,13 @@ class PythonGame:
         self.player = Player(self.screen)
         self.threshold = 150
         self.timer = 0
+        self.timeout = 180*30
+        self.timeout_counter = 0
         self.rising = False
         self.intro_1 = load_image('./Cutscenes/DRGStartComic1Small.jpg')
         self.intro_2 = load_image('./Cutscenes/DRGStartComic2Small.jpg')
-        self.end_1 = load_image('./Cutscenes/DRGEndComic1Small.jpg')
-        self.end_2 = load_image('./Cutscenes/DRGEndComic2Small.jpg')
+        self.end_1 = load_image('./Cutscenes/DRGEndComic1Small.png')
+        self.end_2 = load_image('./Cutscenes/DRGEndComic2Small.png')
         self.title = load_image('./Backgrounds/DRGTitleScreen.png')
         clothespic = load_image('./Items/detectiveClothes.png')
         needlepic = load_image('./Items/clue1Ons.png')
@@ -223,6 +225,12 @@ class PythonGame:
                                         self.converse(self.player, self.player.find_needle_lines, None, [])
                     if event.type == pygame.KEYUP:
                         movement = 0
+                if movement == 0:
+                    self.timeout_counter = self.timeout_counter+1
+                    if self.timeout_counter > self.timeout:
+                        return 0
+                else:
+                    self.timeout_counter = 0
                 self.update(movement)
             #final cutscene
             self.screen.blit(self.base, (0,0)) 
