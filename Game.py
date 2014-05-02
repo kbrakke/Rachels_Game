@@ -85,9 +85,9 @@ class PythonGame:
     def update(self, movement):
         if(self.drunk_meter.state == "full"):
             if movement == 7:
-                movement = 2
+                movement = 4
             elif movement == -7:
-                movement = -2
+                movement = -4
         self.player.move(movement, 0, self.scenes[self.current_scene])
         self.screen.blit(self.base, (0,0))       
         self.scenes[self.current_scene].draw(self.player)
@@ -157,6 +157,8 @@ class PythonGame:
                         if event.key == pygame.K_RIGHT:
                             movement = 7
                             self.player.direction = False
+                        if event.key == pygame.K_r:
+                            return 0
                         if event.key == pygame.K_SPACE:
                             ret = self.scenes[self.current_scene].interact(self.player)
                             if ret != None:
